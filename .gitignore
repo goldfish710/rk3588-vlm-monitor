@@ -49,3 +49,4 @@ client/LLClient/h265decoder.*
 __pycache__/
 *.pyc
 client/remote_demo/config.json
+docs/
