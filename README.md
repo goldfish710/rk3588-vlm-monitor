@@ -48,18 +48,6 @@
 **全链路零拷贝**:V4L2 DMABUF → MPP → RGA → RKNN 全 fd 传递,CPU 只做调度与绘制,
 编码/缩放/旋转全硬件化。
 
-## MQTT 协议(远程操控)
-
-| 方向 | topic | 说明 |
-|---|---|---|
-| 上行报警 | `home/fall` | 报文 + `severity/vlm_confirm/vlm_reply` 可选字段(老订阅端零感知) |
-| 上行摘要 | `home/{device_id}/timeline` | 周期巡检状态摘要 |
-| 上行应答 | `home/{device_id}/resp` | `{cmd,req_id,code,ts,data}`,code≠0 时 data.msg 为错误原因 |
-| 上行状态 | `home/{device_id}/state` | retained:online/offline |
-| 下行命令 | `home/{device_id}/cmd` | `{"cmd":"snapshot\|chat\|timeline\|events\|daily_summary\|daily_events\|last_event_image\|start_stream\|stop_stream\|ping","req_id":"…","auth":"token","text":"…","limit":10}` |
-
-演示:`client/web_demo/index.html`(网页,参数内置打开即用)或 `client/remote_demo/remote_demo.py`(命令行)。
-
 ## 技术栈
 
 | 层 | 技术 |
