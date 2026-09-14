@@ -70,36 +70,6 @@
 | 存储 | fMP4(断电安全)+ SQLite(事件/时间线,幂等 ALTER 迁移)+ 循环覆盖 |
 | 语言 | C++11(paroli C++20 静态库经 C 边界混链),10+ 线程,手写 HTTPS/SSE 客户端、cJSON |
 
-## 快速开始(板端 RK3588)
-
-```bash
-# 部署(PC):交叉编译 server/TLServer/build-linux.sh -p 后推板 /AI/
-# 配置 /AI/config.ini(首次运行自动生成默认;重点节见下)
-# 启动
-cd /AI && ./start.sh
-# 观看
-VLC → rtsp://<板IP>:8554/h265 (主码流) / :8554/h264 (子码流)
-# 对话
-说"你好"唤醒 → 说话 → 板端语音回复(全本地 VLM+Piper,断网可用)
-# 报警订阅
-mosquitto_sub -h <broker> -t home/fall -v        # severity: urgent/attention/cleared
-mosquitto_sub -h <broker> -t home/<device_id>/timeline -v   # 状态摘要
-# 远程操控(PC/手机)
-cd client/remote_demo && python3 remote_demo.py
-```
-
-config.ini 新节速览:
-
-```ini
-[local_llm]      vlm_enable=1                    # 板端 Qwen3-VL(核心卖点;0=回退云端 DeepSeek)
-[chat]           tts_provider=piper              # piper=本地全离线 | cloud=火山
-[vlm_pipeline]   confirm_enable=1                # 跌倒复核总开关
-                 confirm_timeout_ms=5000         # 超时按未确认直报(宁报勿漏)
-                 status_interval_sec=30          # 周期巡检间隔
-                 remote_token=                   # 公网部署必须设置(命令认证)
-[mqtt]           cmd_topic=home/{device_id}/cmd  # 下行命令订阅点
-```
-
 ## 目录结构
 
 ```
