@@ -1,0 +1,146 @@
+root@ATK-DLRK3588:/AI# ./start.sh
+[start] ES8388 录音增益设置完成
+[Config] 配置文件加载成功: ./config.ini
+[Config] 主码流: 1920x1080 @30fps 4000kbps rtsp=/h265
+[Config] 子码流: 640x480 @30fps 1500kbps rtsp=/h264
+[Config] 录像: 开启 根目录=/userdata/AI/record_main 切片=300s 预录=5s 后录=5s
+[Config] 音频: 开启 设备=hw:1,0 44100Hz/2ch 静音告警=开
+[Config] MQTT: tcp://192.168.5.77:1883 topic=home/fall
+[VideoRecorder] SD卡自检通过: 总100.668GB 可用93.138GB 写速173.913MB/s 按当前码率可录约2.31496天
+[VideoRecorder] 启动: MP4(fMP4) 连续=开 事件=开 切片=300s 预录=5s 后录=5s
+load lable ./model/yolov8_pose_labels_list.txt
+model input num: 1, output num: 4
+input tensors:
+output tensors:
+model is NHWC input fmt
+model input height=640, width=640, channel=3
+YOLOv8-Pose 模型加载成功
+RKNN SDK: 2.3.2 (429f97ae6b@2025-04-09T09:09:27), driver: 0.9.8
+  输出[0] /model.22/Concat_1_output_0 type=2 zp=31 scale=0.141366 dims=[1,65,80,80]
+  输出[1] /model.22/Concat_2_output_0 type=2 zp=67 scale=0.235531 dims=[1,65,40,40]
+  输出[2] /model.22/Concat_3_output_0 type=2 zp=50 scale=0.159995 dims=[1,65,20,20]
+  输出[3] /model.22/Concat_6_output_0 type=1 zp=0 scale=1 dims=[1,17,3,8400]
+MQTT thread started
+MQTT attempting to connect...
+MQTT connecting to tcp://192.168.5.77:1883 ...
+[AudioCapture] 设备=hw:1,0 44100Hz/2ch/S16_LE period=2205帧(50.0ms) buffer=8820帧(200.0ms)
+[AudioCapture] 采集线程启动
+[ASR] 词表加载完成: 6257 条
+[AudioCapture] ★警告★ 采集信号标准差=0.0（静音或直流），可能麦克风未接线或增益为 0，请检查硬件（amixer -c 1 contents，ES8388 声卡1；增益设置见 start.sh）
+MQTT connected
+MQTT connected successfully
+MQTT setCallbacks failed, rc=-1
+MQTT subscribed: home/rk3588_home_001/cmd
+[ASR] 三模型加载完成 (encoder in/out=36/36, decoder in/out=1/1, joiner in/out=2/1)
+[ASR] 关键词 5 个: 救命,来人,救救我,帮帮我,你好
+[ASR] 识别文本记录: ./events/asr_text.txt
+[ASR] 语音识别已启动
+[Chat] 初始化: LLM=板端 VLM(./model/qwen3-vl-2b-instruct_w8a8_rk3588.rkllm), TTS=cloud, 唤醒词="你好"
+[VLM] 加载 RKLLM 模型（约 2.4GB，需 10~30s）: ./model/qwen3-vl-2b-instruct_w8a8_rk3588.rkllm
+I rkllm: rkllm-runtime version: 1.3.0, rknpu driver version: 0.9.8, platform: RK3588
+I rkllm: loading rkllm model from ./model/qwen3-vl-2b-instruct_w8a8_rk3588.rkllm
+MQTT sent (75 bytes) to home/rk3588_home_001/state:
+{"state":"online","ts":"2026-09-10 20:06:55","device_id":"rk3588_home_001"}
+I rkllm: rkllm-toolkit version: 1.3.0, max_context_limit: 4096, npu_core_num: 3, target_platform: RK3588, model_dtype: W8A8
+I rkllm: Enabled cpus: [4, 5, 6, 7]
+I rkllm: Enabled cpus num: 4
+I rkllm: Using mrope
+[VLM] rkllm_init 成功，耗时 2193 ms
+I rkllm: Reset chat template:
+I rkllm: System_prompt: <|im_start|>system\n你是居家养老陪伴助手，你的名字叫小安。用口语化的中文回复老人，回答简洁自然、内容清楚，一般两三句话以内。语气温和耐心，可以聊聊家常、天气、健康提醒。<|im_end|>\n
+I rkllm: Prompt_prefix: <|im_start|>user\n
+I rkllm: Prompt_postfix: <|im_end|>\n<|im_start|>assistant\n
+W rkllm: Calling rkllm_set_chat_template will disable the internal automatic chat template parsing, including enable_thinking. Make sure your custom prompt is complete and valid.
+[Chat] 语音对话已启动（远程命令已接入）
+[AacEncoder] 初始化成功: 44100Hz mono 24000bps, ASC=1208, 帧长=1024样本
+[VideoRecorder] AAC 轨道信息: 44100Hz/1ch ASC=2B
+双编码线程启动（子码流仅AI推理，不录像）
+RTSP Server 启动
+主码流: rtsp://<board-ip>:8554/h265 (H.265+AAC音频)
+子码流: rtsp://<board-ip>:8554/h264 (带AI检测框)
+open 成功
+open 成功
+VIDIOC_QUERYCAP 成功
+VIDIOC_QUERYCAP支持多平面
+ 成功
+支持多平面
+VIDIOC_S_FMT 成功
+sizeimage: VIDIOC_S_FMT 成功
+460800
+sizeimage: 12441600
+VIDIOC_REQBUFS 成功
+VIDIOC_REQBUFS 成功
+mpp[29620]: mpp_info: mpp version: 18cf2ca author: alientek       2026-03-13 repository init!
+mpp_create 成功
+mpp[29620]: mpp_info: mpp version: 18cf2ca author: alientek       2026-03-13 repository init!
+mpp_create 成功
+mpp_init 成功mpp_init
+ 成功
+mpp_enc_cfg_init 成功
+mpp_enc_cfg_init 成功
+[MPP] 有效帧率字段: rc:fps_in_num / rc:fps_in_denorm，回读 30/1
+[MPP] 有效帧率字段: rc:fps_in_num / rc:fps_in_denorm，回读 30/1
+mpp[29620]: mpp_enc: set prep cfg w:h [1920:1080] stride [1920:1088] fmt 0 rotate 0 mirror 0
+mpp[29620]: mpp_enc: set prep cfg w:h [640:480] stride [640:480] fmt 0 rotate 0 mirror 0
+mpp[29620]: mpp_enc: set rc cbr bps [4000000:4500000:3000000] fps [30:1:fix] - [30:1:fix] gop 30
+mpp[29620]: mpp_enc: set rc cbr bps [1500000:2000000:1000000] fps [30:1:fix] - [30:1:fix] gop 15
+MPP_ENC_SET_CFG 成功
+MPP_ENC_SET_CFG 成功
+mpp_buffer_import 成功
+mpp_buffer_import 成功
+mpp[29620]: mpp_enc: mode cbr bps [1000000:1500000:2000000] fps fix [30/1] -> fix [30/1] gop i [15] v [0]
+mpp_buffer_import 成功
+mpp_buffer_import 成功
+mpp_buffer_import 成功
+mpp[29620]: mpp_enc: Please use MPP_ENC_GET_HDR_SYNC instead of unsafe MPP_ENC_GET_EXTRA_INFO
+mpp[29620]: mpp_enc: NOTE: MPP_ENC_GET_HDR_SYNC needs MppPacket input
+获取头信息成功
+mpp[29620]: mpp_enc: mode cbr bps [3000000:4000000:4500000] fps fix [30/1] -> fix [30/1] gop i [30] v [0]
+mpp_buffer_import 成功
+mpp_buffer_import 成功
+mpp_buffer_import 成功
+mpp[29620]: mpp_enc: Please use MPP_ENC_GET_HDR_SYNC instead of unsafe MPP_ENC_GET_EXTRA_INFO
+mpp[29620]: mpp_enc: NOTE: MPP_ENC_GET_HDR_SYNC needs MppPacket input
+获取头信息成功
+VIDIOC_STREAMON 成功
+VIDIOC_STREAMON 成功
+主码流 H.265 编码线程启动（统计输出到控制台 + 延时打点）
+[VideoRecorder] H265参数集缓存: VPS=23B SPS=41B PPS=7B (hvcC 注入)
+子码流 H.264 编码线程启动（独立AI线程 + 事件线程 + 无检测跳过绘图）
+rga_api version 1.10.5_[9]
+[Mp4Muxer] 打开 /userdata/AI/record_main/continuous/20260910/200657.mp4 (1920x1080) +AAC
+2719  29631  29620 E im2d_rga_impl: Failed to call RockChipRga interface, please use 'dmesg' command to view driver error log.
+2719  29631  29620 E   librga: job_handle[0], aquire_fence[-1(0xffffffff)], release_fence_ptr[(nil)]
+2719  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2719  29631  29620 E   librga:  Channel  |    Store Mode    |       Rect[x,y,w,h]        |   Image Info[w,h,ws,hs]    |         Format          |     Handle,         Fd,          Virt Addr,          Phys Addr |        Color Space         | Global Alpha 
+2719  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2719  29631  29620 E   librga:       src |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |              nv12(0xa00) |          0,       0x9c,                  0,                  0 |              default(   0) |         0xff 
+2719  29631  29620 E   librga:       dst |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |            rgb888(0x200) |          0,       0x9d,                  0,                  0 |              default(   0) |         0xff 
+2719  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+RGA NV12→RGB888 转换失败
+2786  29631  29620 E im2d_rga_impl: Failed to call RockChipRga interface, please use 'dmesg' command to view driver error log.
+2786  29631  29620 E   librga: job_handle[0], aquire_fence[-1(0xffffffff)], release_fence_ptr[(nil)]
+2786  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2786  29631  29620 E   librga:  Channel  |    Store Mode    |       Rect[x,y,w,h]        |   Image Info[w,h,ws,hs]    |         Format          |     Handle,         Fd,          Virt Addr,          Phys Addr |        Color Space         | Global Alpha 
+2786  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2786  29631  29620 E   librga:       src |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |              nv12(0xa00) |          0,       0x9c,                  0,                  0 |              default(   0) |         0xff 
+2786  29631  29620 E   librga:       dst |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |            rgb888(0x200) |          0,       0x9d,                  0,                  0 |              default(   0) |         0xff 
+2786  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+RGA NV12→RGB888 转换失败
+2852  29631  29620 E im2d_rga_impl: Failed to call RockChipRga interface, please use 'dmesg' command to view driver error log.
+2852  29631  29620 E   librga: job_handle[0], aquire_fence[-1(0xffffffff)], release_fence_ptr[(nil)]
+2852  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2852  29631  29620 E   librga:  Channel  |    Store Mode    |       Rect[x,y,w,h]        |   Image Info[w,h,ws,hs]    |         Format          |     Handle,         Fd,          Virt Addr,          Phys Addr |        Color Space         | Global Alpha 
+2852  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2852  29631  29620 E   librga:       src |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |              nv12(0xa00) |          0,       0x9c,                  0,                  0 |              default(   0) |         0xff 
+2852  29631  29620 E   librga:       dst |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |            rgb888(0x200) |          0,       0x9d,                  0,                  0 |              default(   0) |         0xff 
+2852  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+RGA NV12→RGB888 转换失败
+2919  29631  29620 E im2d_rga_impl: Failed to call RockChipRga interface, please use 'dmesg' command to view driver error log.
+2919  29631  29620 E   librga: job_handle[0], aquire_fence[-1(0xffffffff)], release_fence_ptr[(nil)]
+2919  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2919  29631  29620 E   librga:  Channel  |    Store Mode    |       Rect[x,y,w,h]        |   Image Info[w,h,ws,hs]    |         Format          |     Handle,         Fd,          Virt Addr,          Phys Addr |        Color Space         | Global Alpha 
+2919  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------
+2919  29631  29620 E   librga:       src |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |              nv12(0xa00) |          0,       0x9c,                  0,                  0 |              default(   0) |         0xff 
+2919  29631  29620 E   librga:       dst |     raster( 0x1) |     0,     0,   480,   640 |   480,   640,   480,   640 |            rgb888(0x200) |          0,       0x9d,                  0,                  0 |              default(   0) |         0xff 
+2919  29631  29620 E   librga: ----------+------------------+----------------------------+----------------------------+-------------------------+----------------------------------------------------------------+----------------------------+--------------

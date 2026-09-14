@@ -1,0 +1,51 @@
+# ============ 构建产物 ============
+build/
+install/
+*.o
+*.obj
+*.exe
+*.out
+*.so
+Makefile
+
+# ============ 敏感配置（含 API key / 密码 / token，绝不入库） ============
+config.ini
+client/web_demo/连接参数.txt
+*.pem
+*.key
+
+# ============ 模型权重（体积超限 + 版权，板端文件不入库） ============
+server/model/
+*.rknn
+*.rkllm
+*.onnx
+
+# ============ 第三方预编译库（README 说明获取方式） ============
+server/cpp/3rdparty/
+
+# ============ 运行产物 ============
+*.log
+*.jpg
+*.png
+*.mp4
+*.npz
+*.wav
+*.aac
+*.h265
+events/
+/userdata/
+
+# ============ IDE / 系统 ============
+.qtc_clangd/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+screenshots/
+client/LLClient/h265decoder.*
+.claude/
+__pycache__/
+*.pyc
+client/remote_demo/config.json

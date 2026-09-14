@@ -1,0 +1,83 @@
+/*全局背景*/
+QMainWindow {
+    background-color: #1e1e2e;
+}
+
+/*视频显示区域*/
+QLabel#videoLabel {
+    background-color: #000000;
+    color: #888888;
+    font-size: 16px;
+    border: 2px solid #333345;
+    border-radius: 4px;
+}
+
+/*按钮通用样式*/
+QPushButton {
+    background-color: #2d2d44;
+    color: #e0e0e0;
+    border: 1px solid #444466;
+    border-radius: 4px;
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+QPushButton:hover {
+    background-color: #3d3d5c;
+    border-color: #6666aa;
+}
+
+QPushButton:pressed {
+    background-color: #1a1a2e;
+}
+
+QPushButton:disabled {
+    background-color: #1a1a2e;
+    color: #555555;
+    border-color: #2a2a3a;
+}
+
+/*选择页面大按钮*/
+QPushButton#btnSelectMain, QPushButton#btnSelectSub {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 20px;
+    border: 2px solid #444466;
+    border-radius: 8px;
+}
+
+QPushButton#btnSelectMain:hover, QPushButton#btnSelectSub:hover {
+    border-color: #8888cc;
+    background-color: #3d3d5c;
+}
+
+/*返回按钮*/
+QPushButton#btnBack {
+    background-color: #442d2d;
+    border-color: #664444;
+}
+
+QPushButton#btnBack:hover {
+    background-color: #5c3d3d;
+    border-color: #aa6666;
+}
+
+/*设置按钮*/
+QPushButton#btnSettings {
+    padding: 6px 16px;
+    font-size: 12px;
+    color: #aaaaaa;
+    border-color: #333345;
+}
+
+QPushButton#btnSettings:hover {
+    color: #e0e0e0;
+    border-color: #6666aa;
+}
+
+/*状态栏*/
+QStatusBar {
+    background-color: #16161e;
+    color: #888888;
+    font-size: 12px;
+}

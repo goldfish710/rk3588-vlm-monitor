@@ -1,0 +1,8 @@
+{
+    "broker": "192.168.5.77",
+    "port": 1883,
+    "username": "mqtt1",
+    "password": "请填入你的MQTT密码",
+    "device_id": "rk3588_home_001",
+    "token": ""
+}

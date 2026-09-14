@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<!-- 手机适配：禁止缩放，宽度跟随设备 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>智能家居监护终端 · 远程操控</title>
+<style>
+  :root {
+    --bg:      #0f172a;
+    --panel:   #1e293b;
+    --panel-2: #334155;
+    --line:    #475569;
+    --text:    #e2e8f0;
+    --muted:   #94a3b8;
+    --accent:  #38bdf8;
+    --ok:      #4ade80;
+    --warn:    #fbbf24;
+    --err:     #f87171;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex; flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* ---- 状态条 ---- */
+  header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 10;
+  }
+  #dot { width: 10px; height: 10px; border-radius: 50%; background: var(--err); flex: none; }
+  #dot.on  { background: var(--ok);  box-shadow: 0 0 8px var(--ok); }
+  #dot.mid { background: var(--warn); }
+  #connLabel { flex: 1; font-size: 14px; }
+  #connLabel small { color: var(--muted); display: block; font-size: 12px; }
+  #gear {
+    background: none; border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 6px 12px; font-size: 14px; cursor: pointer;
+  }
+
+  /* ---- 设置面板 ---- */
+  #cfg {
+    display: none; padding: 14px;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  #cfg.open { display: block; }
+  #cfg label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  #cfg input {
+    width: 100%; padding: 11px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    font-size: 15px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  #cfg button {
+    width: 100%; margin-top: 14px; padding: 13px;
+    border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+    background: var(--accent); color: #05263b; cursor: pointer;
+  }
+  #cfg .hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+
+  /* ---- 主区 ---- */
+  main { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+
+  #shotBox {
+    background: #000; border-radius: 12px; overflow: hidden;
+    min-height: 200px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+  #shot { max-width: 100%; max-height: 46dvh; display: block; object-fit: contain; }
+  #shotEmpty { color: var(--muted); font-size: 14px; padding: 40px 20px; text-align: center; }
+
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btns button {
+    padding: 16px 10px; border-radius: 10px; font-size: 16px; font-weight: 600;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    cursor: pointer;
+  }
+  .btns button:active { background: var(--accent); color: #05263b; }
+  .btns button:disabled { opacity: .4; }
+
+  /* ---- 日志 ---- */
+  /* ---- 实时视频面板 ---- */
+  #videoWrap { display: flex; flex-direction: column; gap: 10px; }
+  #live {
+    width: 100%; aspect-ratio: 4 / 3; background: #000;
+    border-radius: 12px; border: 1px solid var(--line);
+  }
+  #videoHint { font-size: 13px; color: var(--muted); }
+
+  #logWrap { flex: 1; display: flex; flex-direction: column; min-height: 160px; }
+  #logWrap h3 {
+    margin: 0 0 8px; font-size: 13px; color: var(--muted); font-weight: 500;
+    display: flex; justify-content: space-between;
+  }
+  #logWrap h3 button {
+    background: none; border: none; color: var(--muted);
+    font-size: 13px; cursor: pointer; padding: 0;
+  }
+  #log {
+    flex: 1; overflow-y: auto; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font: 13px/1.7 ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre-wrap; word-break: break-all; max-height: 40dvh;
+  }
+  .l-in  { color: var(--accent); }
+  .l-out { color: var(--text); }
+  .l-ok  { color: var(--ok); }
+  .l-warn{ color: var(--warn); }
+  .l-err { color: var(--err); }
+  .l-dim { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <span id="dot"></span>
+  <div id="connLabel">未连接<small id="devLabel">—</small></div>
+  <button id="gear">设置</button>
+</header>
+
+<div id="cfg">
+  <label>Broker（WebSocket 地址）</label>
+  <input id="f_broker" placeholder="ws://your-server:8083/mqtt">
+
+  <div class="row">
+    <div>
+      <label>用户名</label>
+      <input id="f_user" placeholder="网页客户端账号">
+    </div>
+    <div>
+      <label>密码</label>
+      <input id="f_pass" type="password" placeholder="密码">
+    </div>
+  </div>
+
+  <label>设备 ID</label>
+  <input id="f_dev" placeholder="rk3588_home_001">
+
+  <label>命令令牌（token）</label>
+  <input id="f_token" type="password" placeholder="与板端 [vlm_pipeline] remote_token 一致">
+
+  <label>HLS 播放地址（实时视频，可选）</label>
+  <input id="f_hls" placeholder="http://服务器IP:8888/live/xxx/index.m3u8">
+
+  <button id="btnConnect">连接</button>
+  <div class="hint">
+    板端需配好 <code>[vlm_pipeline] remote_token</code>；<br>
+    本页用 <code>ws://</code> 连接，请通过 <code>http://</code> 打开本页（https 页面会拦截 ws）。
+  </div>
+</div>
+
+<main>
+  <div id="shotBox">
+    <div id="shotEmpty">点「快照」获取现场画面</div>
+    <img id="shot" style="display:none" alt="现场画面">
+  </div>
+
+  <div class="btns">
+    <button id="btnShot">📷 快照</button>
+    <button id="btnLastEvent">🖼 历史快照</button>
+    <button id="btnPing">⚡ 设备状态</button>
+    <button id="btnTimeline">🕐 时间线</button>
+  </div>
+
+  <div class="btns">
+    <button id="btnAskNow">👁 现在发生了什么</button>
+    <button id="btnAskDay">📅 今天发生了什么</button>
+    <button id="btnAskEvents">⚠️ 今日异常回顾</button>
+  </div>
+
+  <div id="videoWrap">
+    <video id="live" controls playsinline muted></video>
+    <div id="videoHint">点「看视频」远程打开板端实时画面（子码流，带 AI 框，约 3~5s 延迟）</div>
+    <div class="btns">
+      <button id="btnStreamOn">▶ 看视频</button>
+      <button id="btnStreamOff">■ 关流</button>
+    </div>
+  </div>
+
+  <div id="logWrap">
+    <h3><span>通信日志</span><button id="btnClear">清空</button></h3>
+    <div id="log"></div>
+  </div>
+</main>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script>
+'use strict';
+
+// ============ 配置持久化 ============
+const FIELDS = ['broker', 'user', 'pass', 'dev', 'token', 'hls'];
+const LS_KEY = 'pk_demo_cfg';
+
+function loadCfg() {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { c = {}; }
+  // 演示用默认值：首次打开（本机无缓存）即自动连接，无需手动填设置。
+  // ⚠️ 密码明文在页面源码里，公网可见——演示场景接受；正式使用请改服务器密码并在此同步。
+  c.broker = c.broker || 'ws://111.230.224.150:8083/mqtt';
+  c.user   = c.user   || 'web';
+  c.pass   = c.pass   || 'ABC1933909286sb';
+  c.dev    = c.dev    || 'rk3588_home_001';
+  c.token  = c.token  || '874c855f4289b43411cc83c8d18791a1';
+  c.hls    = c.hls    || 'http://111.230.224.150:8888/live_53d6bf31/index.m3u8';
+  return c;
+}
+function saveCfg(c) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(c)); } catch (e) {}
+  FIELDS.forEach(k => {
+    const el = document.getElementById('f_' + k);
+    if (el) el.value = c[k];
+  });
+}
+
+let cfg = loadCfg();
+
+// ============ 日志 ============
+const logEl = document.getElementById('log');
+function log(msg, cls) {
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = document.createElement('div');
+  line.className = cls || 'l-dim';
+  line.textContent = '[' + t + '] ' + msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  while (logEl.childNodes.length > 400) logEl.removeChild(logEl.firstChild);
+}
+document.getElementById('btnClear').onclick = () => { logEl.innerHTML = ''; };
+
+// ============ 连接状态 ============
+const dot = document.getElementById('dot');
+const connLabel = document.getElementById('connLabel');
+const devLabel = document.getElementById('devLabel');
+function setStatus(state, text) {
+  dot.className = state;                       // '' | 'mid' | 'on'
+  connLabel.childNodes[0].nodeValue = text;
+  devLabel.textContent = cfg.dev || '—';
+}
+
+// ============ MQTT ============
+let client = null;
+const pending = {};        // req_id -> {cmd, t0}
+let seq = 0;
+
+function topics() {
+  const d = cfg.dev;
+  return {
+    cmd:      `home/${d}/cmd`,
+    resp:     `home/${d}/resp`,
+    timeline: `home/${d}/timeline`,
+    state:    `home/${d}/state`,
+    fall:     'home/fall',     // 板端报警 topic 固定不带 device_id（见 config.h）
+  };
+}
+
+function connect() {
+  if (client) { try { client.end(true); } catch (e) {} client = null; }
+
+  cfg = readForm();
+  saveCfg(cfg);
+
+  if (!cfg.broker) { log('请先填写 Broker 地址', 'l-err'); return; }
+  setStatus('mid', '连接中…');
+
+  const t = topics();
+  log('连接 ' + cfg.broker, 'l-dim');
+
+  client = mqtt.connect(cfg.broker, {
+    clientId: 'web_' + Math.random().toString(16).slice(2, 10),
+    username: cfg.user || undefined,
+    password: cfg.pass || undefined,
+    clean: true,
+    reconnectPeriod: 3000,
+    connectTimeout: 8000,
+  });
+
+  client.on('connect', () => {
+    setStatus('on', '已连接');
+    log('✓ MQTT 已连接', 'l-ok');
+    [t.resp, t.timeline, t.state, t.fall].forEach(tp => {
+      client.subscribe(tp, { qos: 1 }, err => {
+        if (err) log('订阅失败 ' + tp + ': ' + err.message, 'l-err');
+        else     log('订阅 ' + tp, 'l-dim');
+      });
+    });
+  });
+
+  client.on('reconnect', () => setStatus('mid', '重连中…'));
+  client.on('close',     () => setStatus('', '连接断开'));
+  client.on('error',     e  => { setStatus('', '连接错误'); log('MQTT 错误: ' + e.message, 'l-err'); });
+  client.on('message',   (topic, payload) => onMessage(topic, payload, t));
+}
+
+function onMessage(topic, payload, t) {
+  let m;
+  try { m = JSON.parse(payload.toString()); }
+  catch (e) { log('『' + shortTopic(topic, t) + '』非 JSON: ' + payload.toString().slice(0, 120), 'l-warn'); return; }
+
+  if (topic === t.resp)     return onResp(m);
+  if (topic === t.state)    return log('设备状态: ' + (m.state === 'online' ? '● 在线' : '○ 离线') + '  ' + (m.ts || ''), m.state === 'online' ? 'l-ok' : 'l-warn');
+  if (topic === t.timeline) return log('时间线摘要: ' + (m.summary || m.text || '') + (m.confidence != null ? '（画面人数 ' + m.confidence + '）' : ''), 'l-in');
+  if (topic === t.fall)     return onAlert(m);
+}
+
+function shortTopic(topic, t) {
+  if (topic === t.resp) return '应答';
+  if (topic === t.state) return '状态';
+  if (topic === t.timeline) return '时间线';
+  if (topic === t.fall) return '报警';
+  return topic;
+}
+
+function onAlert(m) {
+  const sev = (m.severity || '').toLowerCase();
+  const cls = sev === 'urgent' ? 'l-err' : (sev === 'attention' ? 'l-warn' : 'l-dim');
+  let s = '★ 报警 [' + (m.event || '?') + ']';
+  if (sev) s += ' 级别=' + sev;
+  if (m.confidence != null) s += ' 置信=' + m.confidence;
+  if (m.vlm_reply) s += '\n      复核意见: ' + m.vlm_reply;
+  if (m.timestamp) s += '\n      时间: ' + m.timestamp;
+  log(s, cls);
+}
+
+function onResp(m) {
+  const p = pending[m.req_id];
+
+  // req_id 匹配 → 计算 RTT（板端会把 req_id 原样回填）
+  if (p) {
+    const rtt = Date.now() - p.t0;
+    delete pending[m.req_id];
+    log('← ' + m.cmd + ' 应答 code=' + m.code + '  RTT=' + rtt + 'ms', m.code === 0 ? 'l-ok' : 'l-warn');
+  } else {
+    log('← ' + m.cmd + ' 应答 code=' + m.code + '（未匹配到 req_id）', 'l-warn');
+  }
+
+  if (m.code !== 0) {
+    const msg = (m.data && m.data.msg) || '未知错误';
+    const hint = {
+      401: '命令令牌不匹配——检查本页 token 与板端 [vlm_pipeline] remote_token',
+      404: '取帧失败——板端摄像头可能没出流',
+      503: '设备忙（语音对话/巡检/复核中），稍后重试',
+      400: '参数错误',
+    }[m.code];
+    log('   ' + m.code + ' ' + msg + (hint ? ' → ' + hint : ''), 'l-err');
+    return;
+  }
+
+  const d = m.data || {};
+  switch (m.cmd) {
+    case 'snapshot':
+      if (d.image_base64) {
+        const img = document.getElementById('shot');
+        img.src = 'data:image/jpeg;base64,' + d.image_base64;
+        img.style.display = 'block';
+        document.getElementById('shotEmpty').style.display = 'none';
+        log('   现场图 ' + d.w + '×' + d.h, 'l-dim');
+      }
+      break;
+    case 'last_event_image':
+      if (d.image_base64) {
+        const img = document.getElementById('shot');
+        img.src = 'data:image/jpeg;base64,' + d.image_base64;
+        img.style.display = 'block';
+        document.getElementById('shotEmpty').style.display = 'none';
+        log('   历史异常图 [' + (d.type || '?') + '] ' + (d.time || '') + ' ' + d.w + '×' + d.h, 'l-warn');
+      }
+      break;
+    case 'chat':
+    case 'daily_summary':
+    case 'daily_events':
+      log('   回答: ' + (d.reply || '(空)'), 'l-in');
+      break;
+    case 'ping':
+      log('   设备 ' + (d.state || '?') + '，画面人数 ' + (d.persons != null ? d.persons : '?'), 'l-in');
+      break;
+    case 'timeline':
+    case 'events':
+      (d.items || []).forEach(it => {
+        let line = '   ' + (it.time || '') + ' [' + (it.type || '') + '] ' + (it.text || '');
+        log(line, it.vlm_confirm == null ? 'l-dim' : 'l-warn');
+        if (it.vlm_reply) log('       复核: ' + it.vlm_reply, 'l-warn');
+      });
+      if (!(d.items || []).length) log('   （无记录）', 'l-dim');
+      break;
+    case 'start_stream':
+      log('   推流已启动，等待流就绪…', 'l-in');
+      // 板端 ffmpeg 起进程 → RTSP 握手 → RTMP 连 MediaMTX → 首个 HLS 分片，约需 2~3s。
+      // 立即拉 m3u8 会 404 → hls.js fatal。这里延迟 3s 再加载。
+      clearTimeout(streamLoadTimer);
+      streamLoadTimer = setTimeout(() => startHls(), 3000);
+      break;
+    case 'stop_stream':
+      log('   推流已停止', 'l-in');
+      stopHls();
+      break;
+  }
+}
+
+// ============ 实时视频（HLS） ============
+let hls = null;
+let hlsRetry = 0;                 // manifest 404 重试计数（推流启动有 2~3s 空窗）
+let streamLoadTimer = null;
+
+function startHls() {
+  const video = document.getElementById('live');
+  const url = cfg.hls;
+  if (!url) { log('请先在「设置」里填 HLS 播放地址', 'l-warn'); return; }
+  stopHls();
+  if (window.Hls && Hls.isSupported()) {
+    hls = new Hls({ liveSyncDurationCount: 2 });   // 低延迟
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.ERROR, (ev, data) => {
+      if (!data.fatal) return;
+      // manifest 还没就绪（板端推流启动空窗）：重试，最多 6 次 × 1s
+      if (data.details === 'manifestLoadError' && hlsRetry < 6) {
+        hlsRetry++;
+        log('   流尚未就绪，1s 后重试 (' + hlsRetry + '/6)', 'l-dim');
+        setTimeout(() => {
+          if (hls) { hls.stopLoad(); hls.startLoad(); }
+        }, 1000);
+        return;
+      }
+      log('视频流错误/已停止（' + data.type + '/' + data.details + '）——重按「看视频」', 'l-err');
+    });
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = url;   // Safari 原生 HLS
+  } else {
+    log('此浏览器不支持 HLS 播放', 'l-err');
+    return;
+  }
+  video.play().catch(() => {});
+}
+function stopHls() {
+  hlsRetry = 0;
+  clearTimeout(streamLoadTimer);
+  if (hls) { hls.destroy(); hls = null; }
+  const video = document.getElementById('live');
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+}
+
+// ============ 发命令 ============
+function send(cmd, kw) {
+  if (!client || !client.connected) { log('未连接，无法发送', 'l-err'); return; }
+  const req_id = (++seq).toString(36) + Date.now().toString(36).slice(-5);
+  const msg = { cmd, req_id };
+  if (cfg.token) msg.auth = cfg.token;
+  Object.assign(msg, kw || {});
+
+  const t = topics();
+  pending[req_id] = { cmd, t0: Date.now() };
+  client.publish(t.cmd, JSON.stringify(msg), { qos: 1 });
+  log('→ ' + cmd + (kw && kw.text ? ' "' + kw.text + '"' : '') + '  req=' + req_id, 'l-out');
+}
+
+// ============ 表单 ============
+function readForm() {
+  return {
+    broker: document.getElementById('f_broker').value.trim(),
+    user:   document.getElementById('f_user').value.trim(),
+    pass:   document.getElementById('f_pass').value,
+    dev:    document.getElementById('f_dev').value.trim() || 'rk3588_home_001',
+    token:  document.getElementById('f_token').value,
+    hls:    document.getElementById('f_hls').value.trim(),
+  };
+}
+
+document.getElementById('gear').onclick = () => document.getElementById('cfg').classList.toggle('open');
+document.getElementById('btnConnect').onclick = () => {
+  document.getElementById('cfg').classList.remove('open');
+  connect();
+};
+document.getElementById('btnShot').onclick     = () => send('snapshot');
+document.getElementById('btnLastEvent').onclick = () => send('last_event_image');
+document.getElementById('btnPing').onclick     = () => send('ping');
+document.getElementById('btnTimeline').onclick = () => send('timeline', { limit: 10 });
+// 三个对话选项（固定文本，不再自由输入）
+document.getElementById('btnAskNow').onclick = () => {
+  log('   正在查看现场，请稍等…', 'l-dim');
+  send('chat', { text: '现在发生了什么' });
+};
+document.getElementById('btnAskDay').onclick = () => {
+  log('   正在总结今日记录，请稍等…', 'l-dim');
+  send('daily_summary');
+};
+document.getElementById('btnAskEvents').onclick = () => {
+  log('   正在回顾今日异常，请稍等…', 'l-dim');
+  send('daily_events');
+};
+document.getElementById('btnStreamOn').onclick = () => {
+  if (!cfg.hls) { log('先在「设置」里填 HLS 播放地址', 'l-warn'); return; }
+  send('start_stream');
+};
+document.getElementById('btnStreamOff').onclick = () => {
+  send('stop_stream');
+  stopHls();
+};
+
+// ============ 启动 ============
+saveCfg(cfg);
+if (cfg.broker) {
+  log('配置已从本机读取，正在连接…', 'l-dim');
+  connect();
+} else {
+  document.getElementById('cfg').classList.add('open');
+  log('首次使用：请在「设置」里填写 Broker 地址与账号', 'l-warn');
+}
+</script>
+</body>
+</html>
